@@ -21,3 +21,15 @@ services:
     runtimeDetails:
       serverStartCommand: docker compose -f docker-compose.testbot.yml up -d
       runtime: docker
+  - serviceName: admin-dashboard
+    language: typescript
+    framework: playwright
+    testDirectory: tests/skyramp/admin
+    api:
+      authType: bearer
+      authHeader: Authorization
+      authScheme: Bearer
+      baseUrl: http://localhost:9000/app
+    runtimeDetails:
+      serverStartCommand: docker compose -f docker-compose.testbot.yml up -d
+      runtime: docker
