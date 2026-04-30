@@ -16,7 +16,9 @@ services:
       retries: 10
 
   medusa:
-    image: node:20-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.testbot
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,11 +31,3 @@ services:
       ADMIN_CORS: "http://localhost:9000"
     ports:
       - "9000:9000"
-    command: >-
-      sh -c "apk add --no-cache curl git &&
-      npm install -g @medusajs/cli@preview --quiet &&
-      medusa new /testbot-app --skip-db --skip-migrations &&
-      cd /testbot-app &&
-      npx medusa db:migrate &&
-      npx medusa user -e admin@testbot.com -p supersecret &&
-      npx medusa start"

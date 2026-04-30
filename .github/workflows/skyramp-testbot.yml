@@ -111,6 +111,6 @@ jobs:
           targetSetupCommand: 'docker compose -f docker-compose.testbot.yml up -d'
           targetTeardownCommand: 'docker compose -f docker-compose.testbot.yml down -v'
           targetReadyCheckCommand: 'curl -sf http://localhost:9000/store/products'
-          targetReadyCheckTimeout: '300'
+          targetReadyCheckTimeout: '600'
           testDirectory: 'tests/skyramp/api'
           authTokenCommand: 'bash .skyramp/get-auth-token.sh'

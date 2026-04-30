@@ -1,0 +1,20 @@
+# Build-time image for Skyramp Testbot CI.
+# Bakes in the Medusa CLI install and project scaffold so container
+# startup only needs to run migrations and start the server.
+
+FROM node:20-alpine
+
+RUN apk add --no-cache curl git
+
+# Install Medusa CLI globally
+RUN npm install -g @medusajs/cli@preview --quiet
+
+# Scaffold a fresh Medusa project (no DB connection needed yet)
+RUN medusa new /testbot-app --skip-db --skip-migrations
+
+WORKDIR /testbot-app
+
+EXPOSE 9000
+
+# Runtime: migrate, seed admin user, start server
+CMD ["sh", "-c", "npx medusa db:migrate && npx medusa user -e admin@testbot.com -p supersecret && npx medusa start"]
