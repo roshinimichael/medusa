@@ -113,8 +113,4 @@ jobs:
           targetReadyCheckCommand: 'curl -sf http://localhost:9000/store/products'
           targetReadyCheckTimeout: '300'
           testDirectory: 'tests/skyramp'
-          authTokenCommand: >
-            curl -sf -X POST http://localhost:9000/auth/user/emailpass
-            -H 'Content-Type: application/json'
-            -d '{"email":"admin@testbot.com","password":"supersecret"}'
-            | jq -r '.token'
+          authTokenCommand: 'bash .skyramp/get-auth-token.sh'
