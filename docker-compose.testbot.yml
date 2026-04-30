@@ -21,7 +21,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://medusa:medusa@postgres/medusa
+      DATABASE_URL: postgres://medusa:medusa@postgres/medusa?sslmode=disable
       JWT_SECRET: testbot-jwt-secret
       COOKIE_SECRET: testbot-cookie-secret
       NODE_ENV: development
@@ -31,9 +31,9 @@ services:
       - "9000:9000"
     command: >-
       sh -c "apk add --no-cache curl git &&
-      npm install -g @medusajs/cli@preview --quiet &&
+      npm install -g @medusajs/cli@preview pnpm --quiet &&
       medusa new /testbot-app --skip-db --skip-migrations &&
-      cd /testbot-app &&
+      cd /testbot-app/apps/backend &&
       npx medusa db:migrate &&
       npx medusa user -e admin@testbot.com -p supersecret &&
       npx medusa start"

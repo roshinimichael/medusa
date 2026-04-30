@@ -11,7 +11,7 @@ metadata:
 services:
   - serviceName: medusa-api
     language: typescript
-    framework: jest
+    framework: playwright
     testDirectory: tests/skyramp/api
     api:
       authType: bearer
