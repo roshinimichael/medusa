@@ -12,7 +12,7 @@ services:
   - serviceName: medusa-api
     language: typescript
     framework: jest
-    testDirectory: tests/skyramp
+    testDirectory: tests/skyramp/api
     api:
       authType: bearer
       authHeader: Authorization
