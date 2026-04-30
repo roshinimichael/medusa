@@ -107,3 +107,10 @@ jobs:
           skyrampLicenseFile: ${{ secrets.SKYRAMP_LICENSE_FILE }}
           anthropicApiKey: ${{ secrets.SKYRAMP_TESTBOT_API_KEY }}
           githubToken: ${{ steps.app-token.outputs.token }}
+          autoCommit: 'true'
+          targetSetupCommand: 'docker compose -f docker-compose.testbot.yml up -d'
+          targetTeardownCommand: 'docker compose -f docker-compose.testbot.yml down -v'
+          targetReadyCheckCommand: 'curl -sf http://localhost:9000/health'
+          targetReadyCheckTimeout: '300'
+          testDirectory: 'tests/skyramp/api'
+          authTokenCommand: 'bash .skyramp/get-auth-token.sh'
