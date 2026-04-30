@@ -11,25 +11,13 @@ metadata:
 services:
   - serviceName: medusa-api
     language: typescript
-    framework: playwright
-    testDirectory: integration-tests/api/__tests__
+    framework: jest
+    testDirectory: tests/skyramp
     api:
       authType: bearer
       authHeader: Authorization
       authScheme: Bearer
       baseUrl: http://localhost:9000
     runtimeDetails:
-      serverStartCommand: npx medusa develop
-      runtime: local
-  - serviceName: admin-dashboard
-    language: typescript
-    framework: playwright
-    testDirectory: packages/admin/dashboard/tests
-    api:
-      authType: bearer
-      authHeader: Authorization
-      authScheme: Bearer
-      baseUrl: http://localhost:9000/app
-    runtimeDetails:
-      serverStartCommand: yarn workspace @medusajs/dashboard dev
-      runtime: local
+      serverStartCommand: docker compose -f docker-compose.testbot.yml up -d
+      runtime: docker
