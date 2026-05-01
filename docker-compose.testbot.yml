@@ -1,6 +1,7 @@
 # Lightweight Medusa stack for Skyramp Testbot CI.
-# Postgres is the only hard dependency; the Medusa server is bootstrapped
-# via the CLI at container startup so no pre-built image is required.
+# Creates a fresh Medusa project from npm, then injects the PR's new route
+# files from the checked-out workspace so the testbot runs against actual
+# PR code rather than a stale npm install.
 
 services:
   postgres:
@@ -20,6 +21,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - .:/repo:ro
     environment:
       DATABASE_URL: postgres://medusa:medusa@postgres/medusa?sslmode=disable
       JWT_SECRET: testbot-jwt-secret
@@ -33,6 +36,8 @@ services:
       sh -c "apk add --no-cache curl git &&
       npm install -g @medusajs/cli@preview pnpm --quiet &&
       medusa new /testbot-app --skip-db --skip-migrations &&
+      mkdir -p /testbot-app/apps/backend/src/api/ping &&
+      cp /repo/packages/medusa/src/api/ping/route.ts /testbot-app/apps/backend/src/api/ping/route.ts &&
       cd /testbot-app/apps/backend &&
       npx medusa db:migrate &&
       npx medusa user -e admin@testbot.com -p supersecret &&
