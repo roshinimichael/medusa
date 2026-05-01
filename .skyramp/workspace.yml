@@ -14,9 +14,7 @@ services:
     framework: playwright
     testDirectory: tests/skyramp/api
     api:
-      authType: bearer
-      authHeader: Authorization
-      authScheme: Bearer
+      authHeader: x-publishable-api-key
       baseUrl: http://localhost:9000
     runtimeDetails:
       serverStartCommand: docker compose -f docker-compose.testbot.yml up -d
