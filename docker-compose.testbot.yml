@@ -1,7 +1,11 @@
-# Lightweight Medusa stack for Skyramp Testbot CI.
-# Creates a fresh Medusa project from npm, then injects the PR's new route
-# files from the checked-out workspace so the testbot runs against actual
-# PR code rather than a stale npm install.
+# Skyramp Testbot test environment — two services:
+#
+#   postgres  — standard Postgres 15, health-checked before Medusa starts.
+#   medusa    — bootstrapped at container start from a vanilla `medusa new`
+#               project. The PR's source tree is mounted read-only at /repo so
+#               the new route file can be copied in before the server starts.
+#               Run via `docker compose up -d --force-recreate` to guarantee a
+#               clean container on every testbot run (no cached state).
 
 services:
   postgres:
@@ -33,12 +37,14 @@ services:
     ports:
       - "9000:9000"
     command: >-
-      sh -c "apk add --no-cache curl git &&
-      npm install -g @medusajs/cli@preview pnpm --quiet &&
-      medusa new /testbot-app --skip-db --skip-migrations &&
-      mkdir -p /testbot-app/apps/backend/src/api/ping &&
-      cp /repo/packages/medusa/src/api/ping/route.ts /testbot-app/apps/backend/src/api/ping/route.ts &&
-      cd /testbot-app/apps/backend &&
-      npx medusa db:migrate &&
-      npx medusa user -e admin@testbot.com -p supersecret &&
-      npx medusa start"
+      sh -c "
+        apk add --no-cache curl git &&
+        npm install -g @medusajs/cli@preview pnpm --quiet &&
+        medusa new /testbot-app --skip-db --skip-migrations &&
+        mkdir -p /testbot-app/apps/backend/src/api/ping &&
+        cp /repo/packages/medusa/src/api/ping/route.ts /testbot-app/apps/backend/src/api/ping/route.ts &&
+        cd /testbot-app/apps/backend &&
+        npx medusa db:migrate &&
+        npx medusa user -e admin@testbot.com -p supersecret &&
+        npx medusa start
+      "
