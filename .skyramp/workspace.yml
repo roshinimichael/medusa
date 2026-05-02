@@ -29,7 +29,7 @@ services:
       authType: bearer
       authHeader: Authorization
       authScheme: Bearer
-      baseUrl: http://localhost:9000/app
+      baseUrl: http://localhost:9000
     runtimeDetails:
       serverStartCommand: docker compose -f docker-compose.testbot.yml --profile build run --rm medusa-builder && docker compose -f docker-compose.testbot.yml up -d --build --force-recreate postgres medusa
       runtime: docker
