@@ -13,8 +13,8 @@
 #      code without needing `medusa new` (which is interactive).
 #
 # Service lifecycle:
-#   1. docker compose -f docker-compose.testbot.yml run --rm medusa-builder
-#   2. docker compose -f docker-compose.testbot.yml up -d --force-recreate
+#   1. docker compose -f docker-compose.testbot.yml --profile build run --rm medusa-builder
+#   2. docker compose -f docker-compose.testbot.yml up -d --force-recreate postgres medusa
 #
 # Skyramp can then both:
 #   - hit the running API/admin endpoints (port 9000)
@@ -26,6 +26,7 @@ services:
   # cap to 4 GB so @medusajs/core-flows doesn't OOM during tsc.
   medusa-builder:
     image: node:20-alpine
+    profiles: ["build"]
     working_dir: /app
     volumes:
       - .:/app

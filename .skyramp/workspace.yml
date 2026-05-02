@@ -19,7 +19,7 @@ services:
       authScheme: Bearer
       baseUrl: http://localhost:9000
     runtimeDetails:
-      serverStartCommand: docker compose -f docker-compose.testbot.yml run --rm medusa-builder && docker compose -f docker-compose.testbot.yml up -d --force-recreate
+      serverStartCommand: docker compose -f docker-compose.testbot.yml --profile build run --rm medusa-builder && docker compose -f docker-compose.testbot.yml up -d --force-recreate postgres medusa
       runtime: docker
   - serviceName: admin-dashboard
     language: typescript
@@ -31,5 +31,5 @@ services:
       authScheme: Bearer
       baseUrl: http://localhost:9000/app
     runtimeDetails:
-      serverStartCommand: docker compose -f docker-compose.testbot.yml run --rm medusa-builder && docker compose -f docker-compose.testbot.yml up -d --force-recreate
+      serverStartCommand: docker compose -f docker-compose.testbot.yml --profile build run --rm medusa-builder && docker compose -f docker-compose.testbot.yml up -d --force-recreate postgres medusa
       runtime: docker
