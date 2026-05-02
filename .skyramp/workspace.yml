@@ -21,7 +21,7 @@ services:
     runtimeDetails:
       serverStartCommand: docker compose -f docker-compose.testbot.yml --profile build run --rm medusa-builder && docker compose -f docker-compose.testbot.yml up -d --build --force-recreate postgres medusa
       runtime: docker
-  - serviceName: admin-dashboard
+  - serviceName: medusa-admin-ui
     language: typescript
     framework: playwright
     testDirectory: tests/skyramp/admin
