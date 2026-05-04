@@ -23,12 +23,6 @@ let URL = getBaseUrl("SKYRAMP_TEST_BASE_URL", "http://localhost:9000");
 test('testPingGet', async () => {
     // Invocation of Skyramp Client
     const client = new SkyrampClient();
-    // Definition of authentication header
-    const headers: Record<string, string> = {};
-    if (process.env.SKYRAMP_TEST_TOKEN && process.env.SKYRAMP_TEST_TOKEN != "") {
-        headers["Authorization"] = "Bearer " + process.env.SKYRAMP_TEST_TOKEN;
-    }
-
     // Expected Response Body
     const expectedPingGetResponseBody: string = `{
         "ok": true
@@ -39,7 +33,6 @@ test('testPingGet', async () => {
         url: URL,
         path: "/ping",
         method: "GET",
-        headers: headers
     });
 
     // Generated Assertions
