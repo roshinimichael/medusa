@@ -1,8 +1,50 @@
-# Lightweight Medusa stack for Skyramp Testbot CI.
-# Postgres is the only hard dependency; the Medusa server is bootstrapped
-# via the CLI at container startup so no pre-built image is required.
+# Skyramp Testbot — Medusa monorepo build + runtime stack.
+#
+# Pattern adapted from Linkwarden / Directus / Appsmith eval setups, with
+# one twist: Medusa has no production Dockerfile (it's a library, not a
+# deployable app). The flow:
+#
+#   1. medusa-builder: yarn install + yarn build the whole monorepo
+#      (all 79 packages compile to dist/).
+#   2. medusa: writes a minimal Medusa "project" at /testbot-project
+#      (package.json + medusa-config.js) and points its node_modules at
+#      /app/node_modules so it sees the just-built workspace packages by
+#      their @medusajs/* names. Then `medusa start` runs against the PR
+#      code without needing `medusa new` (which is interactive).
+#
+# Service lifecycle:
+#   1. docker compose -f docker-compose.testbot.yml --profile build run --rm medusa-builder
+#   2. docker compose -f docker-compose.testbot.yml up -d --build --force-recreate postgres medusa
+#
+# Skyramp can then both:
+#   - hit the running API/admin endpoints (port 9000)
+#   - read existing test files and the OpenAPI spec to author new tests
 
 services:
+  # One-shot builder. Installs Yarn workspace deps and compiles every
+  # package's TypeScript via Turborepo. NODE_OPTIONS lifts the V8 heap
+  # cap to 4 GB so @medusajs/core-flows doesn't OOM during tsc.
+  medusa-builder:
+    image: node:20-alpine
+    profiles: ["build"]
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=4096"
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        apk add --no-cache git curl python3 make g++
+        corepack enable
+        echo 'Installing dependencies...'
+        yarn install --immutable
+        echo 'Building monorepo...'
+        yarn build
+        echo 'Build complete.'
+
   postgres:
     image: postgres:15-alpine
     environment:
@@ -16,7 +58,15 @@ services:
       retries: 10
 
   medusa:
-    image: node:20-alpine
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM node:20-alpine
+        RUN apk add --no-cache curl wget git
+        RUN npm install -g @medusajs/cli@preview --quiet
+    working_dir: /app
+    volumes:
+      - .:/app
     depends_on:
       postgres:
         condition: service_healthy
@@ -25,15 +75,58 @@ services:
       JWT_SECRET: testbot-jwt-secret
       COOKIE_SECRET: testbot-cookie-secret
       NODE_ENV: development
-      STORE_CORS: "http://localhost:3000"
+      STORE_CORS: "http://localhost:3000,http://localhost:9000"
       ADMIN_CORS: "http://localhost:9000"
+      MEDUSA_BACKEND_URL: "http://localhost:9000"
     ports:
       - "9000:9000"
-    command: >-
-      sh -c "apk add --no-cache curl git &&
-      npm install -g @medusajs/cli@preview pnpm --quiet &&
-      medusa new /testbot-app --skip-db --skip-migrations &&
-      cd /testbot-app/apps/backend &&
-      npx medusa db:migrate &&
-      npx medusa user -e admin@testbot.com -p supersecret &&
-      npx medusa start"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+
+        # Write a minimal Medusa project under /testbot-project. medusa start
+        # requires a project layout (package.json + medusa-config.js); we point
+        # node_modules at the monorepo's so every workspace package is resolvable
+        # by its @medusajs/* name.
+        mkdir -p /testbot-project
+        ln -sfn /app/node_modules /testbot-project/node_modules
+
+        node <<'NODE'
+        const fs = require("fs")
+        fs.writeFileSync("/testbot-project/package.json", JSON.stringify({
+          name: "testbot-project",
+          version: "0.0.1",
+          private: true,
+          dependencies: { "@medusajs/medusa": "*" },
+        }, null, 2) + "\n")
+
+        fs.writeFileSync("/testbot-project/medusa-config.js", `
+        const { defineConfig } = require("@medusajs/utils")
+
+        module.exports = defineConfig({
+          projectConfig: {
+            databaseUrl: process.env.DATABASE_URL,
+            http: {
+              jwtSecret: process.env.JWT_SECRET,
+              cookieSecret: process.env.COOKIE_SECRET,
+              storeCors: process.env.STORE_CORS,
+              adminCors: process.env.ADMIN_CORS,
+              authCors: process.env.ADMIN_CORS,
+            },
+          },
+        })
+        `)
+        NODE
+
+        cd /testbot-project
+        npx medusa db:migrate
+        npx medusa user -e admin@testbot.com -p supersecret || echo 'User already exists'
+        npx medusa start
