@@ -123,7 +123,7 @@ jobs:
           anthropicApiKey: ${{ secrets.SKYRAMP_TESTBOT_API_KEY }}
           githubToken: ${{ steps.skyramp-testbot-app-token.outputs.token }}
           skyrampMcpVersion: next
-          sutSetupMode: adapt_workflow
+          sutSetupMode: 'none'
           skipTargetSetup: 'true'
           targetReadyCheckCommand: 'curl -sf http://localhost:9000/health'
           targetReadyCheckTimeout: '180'
