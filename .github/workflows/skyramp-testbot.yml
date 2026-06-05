@@ -44,4 +44,3 @@ jobs:
           githubToken: ${{ steps.skyramp-testbot-app-token.outputs.token }}
           skyrampMcpVersion: next
           sutSetupMode: adapt_workflow
-          sutSourceWorkflowFile: .github/workflows/blackbox-pr.yml
