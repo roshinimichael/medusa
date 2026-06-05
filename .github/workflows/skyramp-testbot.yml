@@ -2,72 +2,7 @@ name: Skyramp Testbot
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      # Common source directories
-      - 'src/**'
-      - 'app/**'
-      - 'lib/**'
-      - 'api/**'
-      - 'server/**'
-      - 'backend/**'
-      - 'frontend/**'
-      - 'web/**'
-      - 'core/**'
-      # Monorepo patterns
-      - 'packages/**'
-      - 'apps/**'
-      - 'services/**'
-      # Go conventions
-      - 'cmd/**'
-      - 'pkg/**'
-      - 'internal/**'
-      # Rust workspaces
-      - 'crates/**'
-      # Serverless
-      - 'functions/**'
-      # Frontend framework conventions
-      - 'pages/**'
-      - 'components/**'
-      # Ruby/Rails
-      - 'db/**'
-      - 'config/**'
-      # Common web patterns
-      - 'routes/**'
-      - 'controllers/**'
-      - 'models/**'
-      - 'views/**'
-      - 'handlers/**'
-      - 'middleware/**'
-      # Tests
-      - 'tests/**'
-      - 'test/**'
-      - 'spec/**'
-      # Build and dependency files
-      - 'package.json'
-      - 'package-lock.json'
-      - 'yarn.lock'
-      - 'pnpm-lock.yaml'
-      - 'pyproject.toml'
-      - 'setup.py'
-      - 'setup.cfg'
-      - 'requirements*.txt'
-      - 'Pipfile'
-      - 'poetry.lock'
-      - 'go.mod'
-      - 'go.sum'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'pom.xml'
-      - 'build.gradle'
-      - 'build.gradle.kts'
-      - 'Gemfile'
-      - 'Gemfile.lock'
-      - '*.csproj'
-      - '*.sln'
-      - 'Dockerfile'
-      - 'docker-compose.yml'
-      - 'docker-compose.yaml'
+    types: [opened, synchronize, reopened, closed]
   issue_comment:
     types: [created]
 
@@ -80,8 +15,8 @@ jobs:
     # Only run for pull_request events or issue_comment on PRs mentioning @skyramp-testbot
     if: >-
       github.event_name == 'pull_request' ||
-      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@skyramp-testbot'))
-    runs-on: ubuntu-latest
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@skyramp-testbot') && github.event.comment.user.login != 'skyramp-testbot[bot]')
+    runs-on: 'ubuntu-latest'
     permissions:
       contents: write
       pull-requests: write
@@ -91,7 +26,7 @@ jobs:
       # Generate a GitHub App installation token to retrigger CI workflows on push
       # https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow
       - name: Generate GitHub App Token
-        id: app-token
+        id: skyramp-testbot-app-token
         uses: actions/create-github-app-token@v1
         with:
           app-id: ${{ secrets.SKYRAMP_TESTBOT_APP_ID }}
@@ -100,17 +35,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.skyramp-testbot-app-token.outputs.token }}
 
-      - uses: skyramp/testbot@9f42461f4bbae69d39d18f5226e245ea19c89a04 # v0.7.0
+      - uses: skyramp/testbot@eval-sut # v0.10.3
         with:
           skyrampLicenseFile: ${{ secrets.SKYRAMP_LICENSE_FILE }}
           anthropicApiKey: ${{ secrets.SKYRAMP_TESTBOT_API_KEY }}
-          githubToken: ${{ steps.app-token.outputs.token }}
-          autoCommit: 'true'
-          targetSetupCommand: 'docker compose -f docker-compose.testbot.yml up -d'
-          targetTeardownCommand: 'docker compose -f docker-compose.testbot.yml down -v'
-          targetReadyCheckCommand: 'curl -sf http://localhost:9000/health'
-          targetReadyCheckTimeout: '300'
-          testDirectory: 'tests/skyramp/api'
-          authTokenCommand: 'bash .skyramp/get-auth-token.sh'
+          githubToken: ${{ steps.skyramp-testbot-app-token.outputs.token }}
+          skyrampMcpVersion: next
+          sutSetupMode: adapt_workflow
+          sutSourceWorkflowFile: .github/workflows/blackbox-pr.yml
